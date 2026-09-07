@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+logs/
+*.log
+__pycache__/
+.venv/
+dist/
+build/
+coverage/

@@ -1,0 +1,11 @@
+{
+  "scenario_id": "golden-path-location-001",
+  "production": "Echoes of Nsukka",
+  "shoot_day": 12,
+  "incident": { "type": "LOCATION_ACCESS_REVOKED", "severity": "HIGH" },
+  "affected_scenes": [42,43,44,45],
+  "crew_count": 38,
+  "lead_actor_available_until": "18:00",
+  "estimated_cost_per_delayed_day_ngn": 3200000,
+  "target_plans": ["relocate","reorder","split_unit"]
+}

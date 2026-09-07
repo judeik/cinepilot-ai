@@ -1,0 +1,15 @@
+{
+  "name": "cinepilot-ai-v3",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Evidence-first AI production recovery command center for media teams.",
+  "type": "module",
+  "engines": { "node": ">=20.11.0" },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/domain.js && node --check src/agents.js && node --check src/gemini.js && node --check src/mcp.js && node --check src/store.js",
+    "test": "node --test",
+    "build": "node scripts/build.js"
+  }
+}

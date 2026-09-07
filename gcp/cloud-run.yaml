@@ -1,0 +1,14 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: cinepilot-ai
+spec:
+  template:
+    spec:
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/cinepilot/cinepilot-ai:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"

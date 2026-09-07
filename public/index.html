@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CinePilot AI — Production Command Center</title>
+<style>
+:root{--bg:#071018;--panel:#0d1822;--panel2:#101f2c;--text:#eef6fb;--muted:#8da2b1;--line:#203443;--accent:#68d8ff;--good:#6ee7b7;--warn:#fbbf24;--bad:#fb7185;--shadow:0 18px 60px rgba(0,0,0,.28)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0%,#102b3a 0,#071018 35%,#050b10 100%);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}button,input{font:inherit}.shell{max-width:1440px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#b8f2ff,#4eb7d9);display:grid;place-items:center;color:#061018;font-weight:900;box-shadow:0 0 40px rgba(104,216,255,.2)}h1,h2,h3,p{margin:0}.brand small{display:block;color:var(--muted);margin-top:2px}.top-actions{display:flex;gap:8px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:10px 14px;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:#061018;font-weight:800}.btn:disabled{opacity:.45;cursor:not-allowed}.hero{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-bottom:16px}.panel{background:linear-gradient(180deg,rgba(16,31,44,.94),rgba(10,20,29,.94));border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:18px}.eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);font-weight:800}.hero h2{font-size:31px;line-height:1.12;margin:8px 0 10px}.hero p{color:var(--muted);max-width:750px}.status{display:flex;justify-content:space-between;align-items:center;padding:10px 0}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--good);margin-right:7px;box-shadow:0 0 12px currentColor}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.metric{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.metric label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.metric strong{display:block;font-size:24px;margin-top:5px}.grid{display:grid;grid-template-columns:1.05fr 1.25fr .8fr;gap:16px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.section-title h3{font-size:15px}.muted{color:var(--muted)}.incident{display:grid;gap:12px}.row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(32,52,67,.7);padding-bottom:9px}.risk{color:var(--warn);font-weight:800}.events{display:grid;gap:9px;max-height:470px;overflow:auto}.event{border-left:2px solid var(--line);padding:8px 10px;background:rgba(255,255,255,.015);border-radius:0 9px 9px 0}.event .agent{color:var(--accent);font-size:10px;text-transform:uppercase;font-weight:900;letter-spacing:.08em}.event .msg{margin-top:2px}.plans{display:grid;gap:10px}.plan{border:1px solid var(--line);border-radius:13px;padding:13px;cursor:pointer}.plan.selected{border-color:var(--accent);box-shadow:0 0 0 1px rgba(104,216,255,.15)}.plan-head{display:flex;justify-content:space-between}.rank{font-size:11px;color:var(--muted)}.score{font-size:22px;font-weight:900}.bar{height:6px;border-radius:10px;background:#172a38;margin:8px 0}.bar i{display:block;height:100%;border-radius:10px;background:var(--accent)}.breakdown{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;color:var(--muted)}.decision{margin-top:16px}.decision h3{font-size:19px;margin:5px 0}.decision .recommend{border:1px solid rgba(110,231,183,.3);background:rgba(110,231,183,.06);padding:14px;border-radius:12px}.decision-actions{display:flex;gap:8px;margin-top:12px}.tag{display:inline-flex;padding:4px 8px;border-radius:99px;background:#162c3a;color:var(--accent);font-size:10px;font-weight:800}.error{color:var(--bad);padding:10px 0}.success{color:var(--good)}@media(max-width:1100px){.grid,.hero{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}@media(max-width:620px){.shell{padding:12px}.metrics{grid-template-columns:1fr}.hero h2{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand"><div class="mark">CP</div><div><h1>CinePilot AI</h1><small>Production Command Center · V3</small></div></div>
+    <div class="top-actions"><button class="btn" id="scenarioBtn">Load Golden Path</button><button class="btn primary" id="runBtn">Run Recovery</button></div>
+  </header>
+  <section class="hero">
+    <div class="panel"><span class="eyebrow">Evidence → Reasoning → Decision → Action → Verification</span><h2>Recover production before a disruption becomes a schedule crisis.</h2><p>CinePilot coordinates specialist agents, retrieves production history from ClickHouse Cloud over HTTPS, lets Gemini reason over the evidence, ranks recovery plans deterministically, then executes only after producer approval.</p></div>
+    <div class="panel"><div class="eyebrow">Runtime</div><div class="status"><span><span class="dot"></span>Command center online</span><span id="runtime">Ready</span></div><div class="status"><span class="muted">Gemini</span><span id="gemini">—</span></div><div class="status"><span class="muted">ClickHouse</span><span id="clickhouse">—</span></div><div class="status"><span class="muted">Outcome Persistence</span><span id="persistence">—</span></div><div class="status"><span class="muted">Evidence</span><span id="evidence">Awaiting run</span></div></div>
+  </section>
+  <section class="metrics" id="metrics"><div class="metric"><label>Production</label><strong id="mProduction">—</strong></div><div class="metric"><label>Risk</label><strong id="mRisk">—</strong></div><div class="metric"><label>Scenes affected</label><strong id="mScenes">—</strong></div><div class="metric"><label>Crew affected</label><strong id="mCrew">—</strong></div></section>
+  <main class="grid">
+    <section class="panel"><div class="section-title"><h3>Incident</h3><span class="tag" id="severity">—</span></div><div class="incident" id="incident"><div class="muted">Load the Golden Path scenario.</div></div><div class="decision" id="decision"></div></section>
+    <section class="panel"><div class="section-title"><h3>Agent Activity</h3><span class="muted" id="eventCount">0 events</span></div><div class="events" id="events"><div class="muted">Runtime events will appear here. No fake activity is rendered.</div></div></section>
+    <section class="panel"><div class="section-title"><h3>Recovery Plans</h3><span class="muted">Deterministic ranking</span></div><div class="plans" id="plans"><div class="muted">Run an incident to generate plans.</div></div></section>
+  </main>
+  <section class="panel" style="margin-top:16px;">
+    <div class="section-title">
+      <h3>Recovery History & Audit Evidence</h3>
+      <span class="muted" id="historyCount">ClickHouse Cloud HTTPS</span>
+    </div>
+    <div id="historyList"><div class="muted">Loading historical outcomes...</div></div>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id);let scenario=null,run=null,selected=null;
+async function api(path,opts={}){const r=await fetch(path,{headers:{'Content-Type':'application/json',...(opts.headers||{})},...opts});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Request failed');return d}
+function formatIncidentType(t){return (t||'').replace(/_/g,' ');}
+function renderIncident(s){
+  const incidentType = formatIncidentType(s.incident?.type || s.incident_type || 'Unknown Incident');
+  const severity = s.incident?.severity || s.severity || '—';
+  $('mProduction').textContent=s.production || '—';
+  $('mScenes').textContent=s.affected_scenes?.length ?? '—';
+  $('mCrew').textContent=s.crew_count ?? '—';
+  $('severity').textContent=severity;
+  $('mRisk').textContent=severity;
+  $('incident').innerHTML=`<div class="row"><span class="muted">Incident</span><b>${incidentType}</b></div><div class="row"><span class="muted">Shoot day</span><b>${s.shoot_day}</b></div><div class="row"><span class="muted">Affected scenes</span><b>${(s.affected_scenes||[]).join(', ')}</b></div><div class="row"><span class="muted">Crew exposed</span><b>${s.crew_count}</b></div><div class="row"><span class="muted">Lead actor window</span><b>Until ${s.lead_actor_available_until}</b></div><div class="row"><span class="muted">Delay cost/day</span><b>₦${Number(s.estimated_cost_per_delayed_day_ngn||0).toLocaleString()}</b></div>`;
+}
+function renderEvents(events){$('eventCount').textContent=`${events.length} events`;$('events').innerHTML=events.map(e=>`<div class="event"><div class="agent">${e.agent||'system'} ${e.tool?`· ${e.tool}`:''}</div><div class="msg">${e.message||''}</div>${e.rows?`<div class="muted">${e.rows} evidence rows</div>`:''}</div>`).join('')}
+function renderPlans(plans){$('plans').innerHTML=plans.map(p=>`<div class="plan ${selected===p.strategy?'selected':''}" onclick="selectPlan('${p.strategy}')"><div class="plan-head"><div><div class="rank">#${p.rank} · ${p.strategy.replace('_',' ')}</div><b>${p.strategy==='reorder'?'Protect the actor window and re-sequence':p.strategy==='relocate'?'Move affected scenes to a replacement location':'Run a split-unit recovery'}</b></div><div class="score">${p.score}</div></div><div class="bar"><i style="width:${p.score}%"></i></div><div class="breakdown"><span>Schedule ${p.score_breakdown.schedule_impact}</span><span>Budget ${p.score_breakdown.budget_impact}</span><span>Resources ${p.score_breakdown.resource_availability}</span><span>Continuity ${p.score_breakdown.creative_continuity}</span><span>History ${p.score_breakdown.historical_success}</span><span>Cost ₦${p.estimated_cost_ngn.toLocaleString()}</span></div></div>`).join('')}
+function selectPlan(s){selected=s;renderPlans(run.plans);renderDecision()}
+function renderDecision(){if(!run)return;const p=run.plans.find(x=>x.strategy===selected)||run.recommendation;$('decision').innerHTML=`<div class="recommend"><span class="eyebrow">Recommended recovery</span><h3>${p.strategy.replace('_',' ')}</h3><p class="muted">${p.rationale}</p><div class="decision-actions"><button class="btn primary" onclick="approve()" ${run.executed?'disabled':''}>${run.executed?'Executed':'Approve & Execute'}</button></div></div>`}
+async function loadScenario(){try{scenario=await api('/api/scenario');renderIncident(scenario);$('runtime').textContent='Scenario loaded'}catch(e){$('incident').innerHTML=`<div class="error">${e.message}</div>`}}
+async function runRecovery(){if(!scenario)return loadScenario();$('runBtn').disabled=true;$('runtime').textContent='Agents running';$('events').innerHTML='';try{run=await api('/api/runs',{method:'POST',body:JSON.stringify({scenario,user_message:'A location access problem threatens today’s production. Find the best recovery path using production evidence.'})});selected=run.recommendation.strategy;$('gemini').textContent=run.events.some(e=>e.agent==='orchestrator'&&e.type==='agent.completed')?'Active':'Deterministic fallback';$('clickhouse').textContent=run.evidence.source==='clickhouse_https'?'HTTPS connected':(run.evidence.source==='clickhouse_mcp'?'MCP connected':'Unavailable');$('persistence').textContent='Awaiting approval';$('evidence').textContent=`${run.evidence.row_count} rows (${run.evidence.source.replace('_',' ')})`;renderEvents(run.events);renderPlans(run.plans);renderDecision();$('runtime').textContent='Decision ready'}catch(e){$('runtime').textContent='Failed';$('events').innerHTML=`<div class="error">${e.message}</div>`}finally{$('runBtn').disabled=false}}
+
+async function loadHistory(){
+  try{
+    const data=await api('/api/outcomes');
+    const list=data.outcomes||[];
+    $('historyCount').textContent=`${list.length} persisted ${list.length===1?'record':'records'} (${(data.source||'HTTPS').replace('_',' ')})`;
+    if(!list.length){
+      $('historyList').innerHTML='<div class="muted">No historical recovery outcomes recorded yet.</div>';
+      return;
+    }
+    $('historyList').innerHTML=`
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;font-size:12px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--line);color:var(--muted);">
+              <th style="padding:8px 6px;">Recorded At</th>
+              <th style="padding:8px 6px;">Run ID</th>
+              <th style="padding:8px 6px;">Scenario</th>
+              <th style="padding:8px 6px;">Strategy</th>
+              <th style="padding:8px 6px;">Status</th>
+              <th style="padding:8px 6px;">Verified</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(h=>`
+              <tr style="border-bottom:1px solid rgba(32,52,67,.4);">
+                <td style="padding:8px 6px;color:var(--muted);white-space:nowrap;">${h.recorded_at||'—'}</td>
+                <td style="padding:8px 6px;font-family:monospace;font-size:11px;color:var(--accent);">${h.run_id}</td>
+                <td style="padding:8px 6px;">${h.scenario_id}</td>
+                <td style="padding:8px 6px;"><b>${(h.strategy||'').replace('_',' ')}</b></td>
+                <td style="padding:8px 6px;"><span class="tag" style="background:${h.status==='RECOVERED'?'rgba(110,231,183,.15)':'#162c3a'};color:${h.status==='RECOVERED'?'var(--good)':'var(--accent)'};">${h.status}</span></td>
+                <td style="padding:8px 6px;">${h.verified?'<span style="color:var(--good);">✓ True</span>':'<span style="color:var(--warn);">✗ False</span>'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){
+    $('historyList').innerHTML=`<div class="muted">Recovery history unavailable: ${e.message}</div>`;
+  }
+}
+
+async function approve(){if(!run||!selected)return;try{run=await api(`/api/runs/${run.run_id}/approve`,{method:'POST',body:JSON.stringify({run_id:run.run_id,strategy:selected})});renderEvents(run.events);renderPlans(run.plans);renderDecision();const persisted=run.events.some(e=>e.type==='outcome.verified');$('persistence').textContent=persisted?'Persisted & Verified (HTTPS)':(run.outcome?'Persisted':'Skipped / Failed');$('runtime').textContent=run.verification?.verified?'Recovered + verified':'Executed with verification issue';$('evidence').textContent=`${run.evidence.row_count} rows · outcome recorded`;await loadHistory();}catch(e){$('runtime').textContent='Approval failed';$('decision').insertAdjacentHTML('beforeend',`<div class="error">${e.message}</div>`)} }
+$('scenarioBtn').onclick=loadScenario;$('runBtn').onclick=runRecovery;loadScenario();loadHistory();
+</script>
+
+</body>
+</html>
