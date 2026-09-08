@@ -1,4 +1,4 @@
-﻿# CinePilot AI V3
+# CinePilot AI V3
 
 **Live Demo:** [https://cinepilotapp.vercel.app](https://cinepilotapp.vercel.app)
 **Backend API:** [https://cinepilot-ai-0fsz.onrender.com](https://cinepilot-ai-0fsz.onrender.com)
@@ -47,7 +47,7 @@ When a production disruption comes in, CinePilot does the following:
 
 **Then it stops and waits.** Nothing executes automatically. The producer reviews the ranked plans, sees the evidence behind each one, and approves a specific strategy. Only after that approval does CinePilot transition the production state, verify the recovery, and write the audit record to ClickHouse.
 
-The full cycle is: **incident â†’ evidence â†’ ranking â†’ approval â†’ execution â†’ verification â†’ ClickHouse persistence.**
+The full cycle is: **incident → evidence → ranking → approval → execution → verification → ClickHouse persistence.**
 
 ---
 
@@ -64,7 +64,7 @@ CinePilot uses a benchmark scenario to demonstrate the complete workflow end-to-
 | Affected Scenes | 42, 43, 44, 45 (main compound exterior and veranda) |
 | Crew Exposed | 38 members |
 | Lead Actor Window | Strictly until 18:00 |
-| Estimated Daily Delay Cost | â‚¦3,200,000 |
+| Estimated Daily Delay Cost | ₦3,200,000 |
 
 This is a fictional production scenario, not a real commercial film. I chose it because it captures multiple simultaneous constraints that make recovery genuinely difficult: 38 crew members are on payroll, daylight is running out, four key scenes cannot shoot at the scheduled location, and the lead actor has a hard departure at 6:00 PM.
 
@@ -162,6 +162,15 @@ CinePilot caught the error, engaged its deterministic fallback mode, and continu
 - ClickHouse outcome: written and read back successfully
 
 The final production E2E run did not use live Gemini reasoning. It used the deterministic fallback. I am documenting this because the resilience behavior is intentional and the test result is real: CinePilot completed the full workflow correctly despite the upstream AI failure.
+
+### Google Cloud and Vertex AI Support
+
+CinePilot is built using the official `@google/genai` SDK and includes native support for two deployment configurations:
+
+* **Google AI Studio / Gemini API:** Configured via `GEMINI_API_KEY` (and optional `GEMINI_MODEL=gemini-3.6-flash`). This is the active authentication path on the live Render deployment.
+* **Google Cloud Vertex AI:** Configured by setting `GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION` (for example, `us-central1`). CinePilot initializes the SDK in Vertex AI mode with `vertexai: true`.
+
+The codebase supports both authentication paths with identical schema validation and deterministic fallback safety.
 
 ---
 
@@ -343,7 +352,8 @@ CLICKHOUSE_SECURE=true
 CLICKHOUSE_VERIFY=true
 CLICKHOUSE_MCP_COMMAND=mcp-clickhouse
 CLICKHOUSE_ALLOW_WRITE_ACCESS=false
-CINEPILOT_REQUIRE_LIVE_MCP=true
+# Set to false for local development fallback; set to true for strict live MCP validation
+CINEPILOT_REQUIRE_LIVE_MCP=false
 ```
 
 ### 5. Run Checks and Tests
@@ -373,7 +383,7 @@ The production system is available at [https://cinepilotapp.vercel.app](https://
 What you will see:
 
 1. **Status indicator** -- If the Render backend is waking from sleep, a warm-up banner will count down until the service is ready. This is expected behavior on the free tier.
-2. **The scenario** -- The *Echoes of Nsukka* incident is pre-loaded: shoot day 12, scenes 42 to 45, 38 crew members exposed, â‚¦3,200,000 daily delay cost.
+2. **The scenario** -- The *Echoes of Nsukka* incident is pre-loaded: shoot day 12, scenes 42 to 45, 38 crew members exposed, ₦3,200,000 daily delay cost.
 3. **Run Recovery** -- Click this to trigger the workflow. The event log will show ClickHouse evidence retrieval through the MCP server in real time.
 4. **Recovery plans** -- Three ranked options appear with dimensional score breakdowns.
 5. **Approve and Execute** -- Select a plan and approve it. The system transitions to `EXECUTED`.
