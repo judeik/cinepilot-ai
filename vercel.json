@@ -8,19 +8,19 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://cinepilot-ai.onrender.com/api/:path*"
+      "destination": "https://cinepilot-ai-0fsz.onrender.com/api/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://cinepilot-ai.onrender.com/health"
+      "destination": "https://cinepilot-ai-0fsz.onrender.com/health"
     },
     {
       "source": "/healthz",
-      "destination": "https://cinepilot-ai.onrender.com/healthz"
+      "destination": "https://cinepilot-ai-0fsz.onrender.com/healthz"
     },
     {
       "source": "/ready",
-      "destination": "https://cinepilot-ai.onrender.com/ready"
+      "destination": "https://cinepilot-ai-0fsz.onrender.com/ready"
     }
   ]
 }

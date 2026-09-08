@@ -36,7 +36,7 @@
 </div>
 <script>
 const $=id=>document.getElementById(id);let scenario=null,run=null,selected=null;
-const API_BASE = (window.__ENV__ && window.__ENV__.API_BASE) || window.CINEPILOT_API_URL || (location.hostname.includes('vercel.app') ? 'https://cinepilot-ai.onrender.com' : '');
+const API_BASE = (window.__ENV__ && window.__ENV__.API_BASE) || window.CINEPILOT_API_URL || (location.hostname.includes('vercel.app') ? 'https://cinepilot-ai-0fsz.onrender.com' : '');
 
 async function api(path,opts={}){
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
