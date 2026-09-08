@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "public": true,
+  "framework": null,
+  "buildCommand": null,
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://cinepilot-ai.onrender.com/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://cinepilot-ai.onrender.com/health"
+    },
+    {
+      "source": "/healthz",
+      "destination": "https://cinepilot-ai.onrender.com/healthz"
+    },
+    {
+      "source": "/ready",
+      "destination": "https://cinepilot-ai.onrender.com/ready"
+    }
+  ]
+}

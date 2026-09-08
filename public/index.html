@@ -15,6 +15,7 @@
     <div class="brand"><div class="mark">CP</div><div><h1>CinePilot AI</h1><small>Production Command Center · V3</small></div></div>
     <div class="top-actions"><button class="btn" id="scenarioBtn">Load Golden Path</button><button class="btn primary" id="runBtn">Run Recovery</button></div>
   </header>
+  <div id="warmupBanner" style="display:none;margin-bottom:16px;padding:12px 18px;border-radius:12px;background:rgba(104,216,255,0.08);border:1px solid rgba(104,216,255,0.3);color:var(--text);font-size:13px;align-items:center;justify-content:space-between;"></div>
   <section class="hero">
     <div class="panel"><span class="eyebrow">Evidence → Reasoning → Decision → Action → Verification</span><h2>Recover production before a disruption becomes a schedule crisis.</h2><p>CinePilot coordinates specialist agents, retrieves production history from ClickHouse Cloud over HTTPS, lets Gemini reason over the evidence, ranks recovery plans deterministically, then executes only after producer approval.</p></div>
     <div class="panel"><div class="eyebrow">Runtime</div><div class="status"><span><span class="dot"></span>Command center online</span><span id="runtime">Ready</span></div><div class="status"><span class="muted">Gemini</span><span id="gemini">—</span></div><div class="status"><span class="muted">ClickHouse</span><span id="clickhouse">—</span></div><div class="status"><span class="muted">Outcome Persistence</span><span id="persistence">—</span></div><div class="status"><span class="muted">Evidence</span><span id="evidence">Awaiting run</span></div></div>
@@ -35,7 +36,77 @@
 </div>
 <script>
 const $=id=>document.getElementById(id);let scenario=null,run=null,selected=null;
-async function api(path,opts={}){const r=await fetch(path,{headers:{'Content-Type':'application/json',...(opts.headers||{})},...opts});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Request failed');return d}
+const API_BASE = (window.__ENV__ && window.__ENV__.API_BASE) || window.CINEPILOT_API_URL || (location.hostname.includes('vercel.app') ? 'https://cinepilot-ai.onrender.com' : '');
+
+async function api(path,opts={}){
+  const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
+  const r = await fetch(url,{headers:{'Content-Type':'application/json',...(opts.headers||{})},...opts});
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.detail||'Request failed');
+  return d;
+}
+
+const RETRY_DELAYS = [0, 2000, 4000, 8000, 15000];
+let warmupInProgress = false;
+
+function showWarmupBanner(msg, isError=false){
+  const banner = $('warmupBanner');
+  if(!banner) return;
+  banner.style.display = 'flex';
+  banner.style.borderColor = isError ? 'rgba(251,113,133,0.4)' : 'rgba(104,216,255,0.3)';
+  banner.style.background = isError ? 'rgba(251,113,133,0.08)' : 'rgba(104,216,255,0.08)';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="dot" style="background:${isError?'var(--bad)':'var(--accent)'};"></span>
+      <span>${msg}</span>
+    </div>
+    ${isError ? '<button class="btn" style="padding:4px 10px;font-size:12px;" onclick="initWarmup()">Retry Connection</button>' : ''}
+  `;
+}
+
+function hideWarmupBanner(){
+  const banner = $('warmupBanner');
+  if(banner) banner.style.display = 'none';
+}
+
+async function initWarmup(){
+  if(warmupInProgress) return;
+  warmupInProgress = true;
+  $('runtime').textContent = 'Connecting…';
+
+  for(let i=0; i<RETRY_DELAYS.length; i++){
+    const delay = RETRY_DELAYS[i];
+    const attempt = i + 1;
+    if(delay > 0){
+      showWarmupBanner(`CinePilot is starting its production intelligence engine… (Waking cloud runtime, attempt ${attempt}/${RETRY_DELAYS.length})`);
+      $('runtime').textContent = `Waking engine… (~${Math.round(delay/1000)}s)`;
+      await new Promise(res => setTimeout(res, delay));
+    }
+
+    try{
+      const res = await api('/ready');
+      if(res.status === 'ready' || res.status === 'ok'){
+        hideWarmupBanner();
+        $('runtime').textContent = 'Ready';
+        warmupInProgress = false;
+        await loadScenario();
+        await loadHistory();
+        return true;
+      }
+    }catch(err){
+      console.warn(`Warmup attempt ${attempt} failed: ${err.message}`);
+      if(attempt === 1 && RETRY_DELAYS.length > 1){
+        showWarmupBanner(`CinePilot is starting its production intelligence engine… (Waking cloud runtime, attempt ${attempt}/${RETRY_DELAYS.length})`);
+      }
+    }
+  }
+
+  warmupInProgress = false;
+  $('runtime').textContent = 'Offline';
+  showWarmupBanner('Cloud engine is taking longer than usual to resume. Click to retry connection.', true);
+  return false;
+}
+
 function formatIncidentType(t){return (t||'').replace(/_/g,' ');}
 function renderIncident(s){
   const incidentType = formatIncidentType(s.incident?.type || s.incident_type || 'Unknown Incident');
@@ -97,7 +168,7 @@ async function loadHistory(){
 }
 
 async function approve(){if(!run||!selected)return;try{run=await api(`/api/runs/${run.run_id}/approve`,{method:'POST',body:JSON.stringify({run_id:run.run_id,strategy:selected})});renderEvents(run.events);renderPlans(run.plans);renderDecision();const persisted=run.events.some(e=>e.type==='outcome.verified');$('persistence').textContent=persisted?'Persisted & Verified (HTTPS)':(run.outcome?'Persisted':'Skipped / Failed');$('runtime').textContent=run.verification?.verified?'Recovered + verified':'Executed with verification issue';$('evidence').textContent=`${run.evidence.row_count} rows · outcome recorded`;await loadHistory();}catch(e){$('runtime').textContent='Approval failed';$('decision').insertAdjacentHTML('beforeend',`<div class="error">${e.message}</div>`)} }
-$('scenarioBtn').onclick=loadScenario;$('runBtn').onclick=runRecovery;loadScenario();loadHistory();
+$('scenarioBtn').onclick=loadScenario;$('runBtn').onclick=runRecovery;initWarmup();
 </script>
 
 </body>

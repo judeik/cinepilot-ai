@@ -19,12 +19,12 @@ if (fs.existsSync(envFile)) {
 const csv = (v, fallback) => (v ? v.split(',').map(x => x.trim()).filter(Boolean) : fallback);
 export const config = {
   root,
-  port: Number(process.env.PORT || 8080),
+  port: Number(process.env.PORT || 8056),
   host: process.env.HOST || '0.0.0.0',
   corsOrigin: process.env.CORS_ORIGIN || '*',
   apiToken: process.env.API_TOKEN || '',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
   vertex: process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true',
   project: process.env.GOOGLE_CLOUD_PROJECT || '',
   location: process.env.GOOGLE_CLOUD_LOCATION || 'global',
@@ -36,7 +36,7 @@ export const config = {
   clickhousePassword: process.env.CLICKHOUSE_PASSWORD || '',
   clickhouseDatabase: process.env.CLICKHOUSE_DATABASE || 'default',
   clickhouseSecure: process.env.CLICKHOUSE_SECURE === 'true',
-  mcpCommand: process.env.CLICKHOUSE_MCP_COMMAND || '',
+  mcpCommand: process.env.CLICKHOUSE_MCP_COMMAND || 'mcp-clickhouse',
   mcpArgs: csv(process.env.CLICKHOUSE_MCP_ARGS, []),
   mcpUrl: process.env.MCP_CLICKHOUSE_URL || '',
   mcpToken: process.env.MCP_CLICKHOUSE_TOKEN || '',

@@ -1,7 +1,13 @@
+import { GoogleGenAI } from '@google/genai';
 import { config } from './config.js';
 
 export class GeminiReasoner {
-  get configured() { return Boolean(config.geminiApiKey || (config.vertex && config.vertexAccessToken)); }
+  get configured() {
+    if (config.vertex) {
+      return Boolean(config.project && config.location);
+    }
+    return Boolean(config.geminiApiKey || (config.project && config.location));
+  }
 
   async reason({ incident, evidence, plans }) {
     if (!this.configured) return { mode:'deterministic-development', summary:'Gemini is not configured; deterministic local reasoning is being used for development. No Gemini claim is made.', recommendation: plans[0]?.strategy || 'reorder' };
@@ -66,15 +72,42 @@ ${JSON.stringify(plans)}`;
     };
   }
 
-  async generate(prompt) {
-    if (config.geminiApiKey) {
-      const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.geminiModel)}:generateContent?key=${encodeURIComponent(config.geminiApiKey)}`;
-      const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.1,responseMimeType:'application/json'}})});
-      if(!r.ok) throw new Error(`Gemini request failed (${r.status})`);
-      const data=await r.json();
-      return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+  createClient() {
+    if (config.vertex) {
+      if (!config.project || !config.location) {
+        throw new Error(
+          'Vertex AI configuration missing: GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION must be set.'
+        );
+      }
+      return new GoogleGenAI({
+        vertexai: true,
+        project: config.project,
+        location: config.location
+      });
     }
-    throw new Error('Vertex AI direct token mode is not configured. Set GEMINI_API_KEY for local live Gemini.');
+
+    if (config.geminiApiKey) {
+      return new GoogleGenAI({ apiKey: config.geminiApiKey });
+    }
+
+    return null;
+  }
+
+  async generate(prompt) {
+    const client = this.createClient();
+    if (!client) {
+      throw new Error(
+        'Google Cloud Gen AI SDK is not configured. Configure Vertex AI via GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION.'
+      );
+    }
+    const response = await client.models.generateContent({
+      model: config.geminiModel || 'gemini-3.6-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json'
+      }
+    });
+    return response.text || '';
   }
 }
 

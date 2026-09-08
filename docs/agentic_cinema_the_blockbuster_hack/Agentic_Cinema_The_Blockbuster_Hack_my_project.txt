@@ -1,0 +1,61 @@
+My projects
+
+CinePilot AI
+Draft
+2/5 steps done
+2 more days to deadline
+Preview 
+Manage team
+Project overview
+Project details
+Additional info
+Submit
+Project details
+For public project page
+
+Information entered below will appear on your public project page.
+
+Project Story
+* About the project
+Be sure to write what inspired you, what you learned, how you built your project, and the challenges you faced. Format your story in Markdown, with LaTeX support for math.
+
+## Inspiration...
+
+Markdown tips (learn more)
+Text formatting
+## Headline
+**bold**
+_ italics _
+[link](http://foo.bar)
+![Alt text](/path/to/img.jpg)
+Code block example
+```ruby
+puts "Hello World!"
+```
+LaTeX math tips (learn more)
+\\( ... \\) for in-line math
+$$ ... $$ for displayed equations
+* Built with
+You can add up to 25 tags.
+
+* Built with
+Languages, frameworks, platforms, cloud services, databases, APIs, etc.
+Languages, frameworks, platforms, cloud services, databases, APIs, etc.
+"Try it out" links
+Add links where people can try your project or see your code.
+
+URL for demo site, app store listing, GitHub repo, etc.
+add another link
+Project Media
+Image gallery
+JPG, PNG or GIF format, 5 MB max file size. For best results, use a 3:2 ratio. Up to 15 images.
+
+Choose files
+or drag and drop
+
+ 
+* Video demo link
+This video will be embedded at the top of your project page. Read more about uploading videos.
+
+YouTube, Facebook Video, Vimeo or Youku URL
+Save & continue Cancel

@@ -1,0 +1,2 @@
+mcp-clickhouse==0.6.0
+

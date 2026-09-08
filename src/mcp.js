@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import { config } from './config.js';
 
 function parseMessage(line) {
@@ -7,6 +9,15 @@ function parseMessage(line) {
 
 export class ClickHouseMCP {
   constructor() { this.requestId = 0; }
+
+  // Official mcp-clickhouse tool: run_query with argument key 'query'
+  // Spec: mcp-clickhouse >=0.4.x — tool is 'run_query', input: { query: string }
+  // Runs in read-only mode by default (CLICKHOUSE_ALLOW_WRITE_ACCESS=false unless overridden).
+  async queryEvidence(sql) {
+    const result = await this.call('run_query', { query: sql });
+    // Result is typically { rows: [...] } or a text-wrapped JSON array
+    return result;
+  }
 
   async call(name, args) {
     if (config.mcpUrl) return this.httpCall(name, args);
@@ -34,7 +45,18 @@ export class ClickHouseMCP {
 
   stdioCall(name, args) {
     return new Promise((resolve, reject) => {
-      const child = spawn(config.mcpCommand, config.mcpArgs, { env: { ...process.env, CLICKHOUSE_HOST: config.clickhouseHost, CLICKHOUSE_PORT: String(config.clickhousePort), CLICKHOUSE_USER: config.clickhouseUser, CLICKHOUSE_PASSWORD: config.clickhousePassword, CLICKHOUSE_DATABASE: config.clickhouseDatabase, CLICKHOUSE_SECURE: String(config.clickhouseSecure), CLICKHOUSE_ALLOW_WRITE_ACCESS: 'true', CLICKHOUSE_ALLOW_DROP: 'false' }, stdio:['pipe','pipe','pipe'] });
+      const mcpArgs = (config.mcpArgs || []).map(arg => {
+        if (typeof arg === 'string' && arg.endsWith('.py') && !path.isAbsolute(arg)) {
+          return path.resolve(config.root, arg);
+        }
+        return arg;
+      });
+      let command = config.mcpCommand;
+      if (command === 'mcp-clickhouse' && process.platform === 'win32') {
+        const localExe = path.join(config.root, 'scripts', 'mcp-clickhouse.exe');
+        if (fs.existsSync(localExe)) command = localExe;
+      }
+      const child = spawn(command, mcpArgs, { cwd: config.root, env: { ...process.env, CLICKHOUSE_HOST: config.clickhouseHost, CLICKHOUSE_PORT: String(config.clickhousePort), CLICKHOUSE_USER: config.clickhouseUser, CLICKHOUSE_PASSWORD: config.clickhousePassword, CLICKHOUSE_DATABASE: config.clickhouseDatabase, CLICKHOUSE_SECURE: String(config.clickhouseSecure), CLICKHOUSE_VERIFY: 'true', CLICKHOUSE_ALLOW_WRITE_ACCESS: 'false', CLICKHOUSE_ALLOW_DROP: 'false' }, stdio:['pipe','pipe','pipe'] });
       let buffer=''; let initialized=false; const initId=++this.requestId; const callId=++this.requestId;
       const timer=setTimeout(()=>{child.kill();reject(new Error('MCP request timed out'));}, 30000);
       child.stdout.on('data', chunk => {
@@ -43,21 +65,35 @@ export class ClickHouseMCP {
         for (const line of lines) {
           const msg=parseMessage(line.trim()); if(!msg) continue;
           if(msg.id===initId){ initialized=true; child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized',params:{}})+'\n'); child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:callId,method:'tools/call',params:{name,arguments:args}})+'\n'); }
-          else if(msg.id===callId){ clearTimeout(timer); child.kill(); if(msg.error) reject(new Error(msg.error.message||'MCP tool error')); else resolve(unwrapMcpResult(msg.result)); }
+          else if(msg.id===callId){
+            clearTimeout(timer);
+            child.kill();
+            if(msg.error) reject(new Error(msg.error.message||'MCP tool error'));
+            else if(msg.result?.isError) {
+              const errText = (msg.result.content||[]).map(x=>x.text).join(' ') || 'MCP tool error';
+              reject(new Error(errText));
+            }
+            else resolve(unwrapMcpResult(msg.result));
+          }
         }
       });
       child.stderr.on('data', ()=>{});
       child.on('error', e=>{clearTimeout(timer);reject(new Error(`Unable to start MCP server: ${e.message}`));});
       child.on('exit', code=>{if(!initialized){clearTimeout(timer);reject(new Error(`MCP server exited before initialize (code ${code})`));}});
-      child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:initId,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'cinepilot-ai',version:'3.0.0'}}})+'\n');
+      child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:initId,method:'initialize',params:{protocolVersion:'2024-11-05',capabilities:{},clientInfo:{name:'cinepilot-ai',version:'3.0.0'}}})+'\n');
     });
   }
 }
 
 function unwrapMcpResult(result) {
-  if (result?.structuredContent) return result.structuredContent;
+  if (result?.structuredContent?.result && typeof result.structuredContent.result === 'string') {
+    try { return JSON.parse(result.structuredContent.result); } catch {}
+  }
+  if (result?.structuredContent && typeof result.structuredContent === 'object' && (result.structuredContent.rows || result.structuredContent.columns)) {
+    return result.structuredContent;
+  }
   const text = (result?.content || []).filter(x=>x.type==='text').map(x=>x.text).join('\n');
-  if (!text) return result || {};
+  if (!text) return result?.structuredContent || result || {};
   try { return JSON.parse(text); } catch { return { text }; }
 }
 

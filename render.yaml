@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: cinepilot-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "8080"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: CLICKHOUSE_HOST
+        value: gibzmvxu0x.eu-central-1.aws.clickhouse.cloud
+      - key: CLICKHOUSE_PORT
+        value: "8443"
+      - key: CLICKHOUSE_USER
+        value: default
+      - key: CLICKHOUSE_DATABASE
+        value: default
+      - key: CLICKHOUSE_SECURE
+        value: "true"
+      - key: CLICKHOUSE_VERIFY
+        value: "true"
+      - key: CLICKHOUSE_MCP_COMMAND
+        value: mcp-clickhouse
+      - key: CLICKHOUSE_MCP_ARGS
+        value: ""
+      - key: CLICKHOUSE_ALLOW_WRITE_ACCESS
+        value: "false"
+      - key: CINEPILOT_REQUIRE_LIVE_MCP
+        value: "true"
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GOOGLE_GENAI_USE_VERTEXAI
+        value: "false"
+      - key: GOOGLE_CLOUD_LOCATION
+        value: us-central1
+      - key: CLICKHOUSE_PASSWORD
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

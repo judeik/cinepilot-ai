@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+Lib/
+node_modules/
+scripts/*.exe
+scripts/*.py
+requirements.txt
+Dockerfile
+render.yaml
+tests/
+docs/
+data/
+src/
+*.log
+.git
+.gitignore

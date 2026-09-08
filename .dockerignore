@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+node_modules
+Lib
+scripts/*.exe
+.git
+.gitignore
+Dockerfile
+.dockerignore
+tests
+*.log
+__pycache__
+.venv
+dist
+build
+coverage

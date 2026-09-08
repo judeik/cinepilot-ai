@@ -2,6 +2,9 @@
 .env.*
 !.env.example
 node_modules/
+Lib/
+scripts/*.exe
+scripts/pywin32*
 logs/
 *.log
 __pycache__/
@@ -9,3 +12,4 @@ __pycache__/
 dist/
 build/
 coverage/
+.vercel/

@@ -16,21 +16,42 @@ export class Orchestrator {
     let evidence, source='local_fixture';
     try {
       assertReadOnlyQuery(query);
-      if (this.ch.configured) {
+      if (configLiveMcp()) {
+        // PRIMARY PATH: Official ClickHouse MCP server (mcp-clickhouse) — ClickHouse Track requirement
+        let mcpOk = false;
+        try {
+          this.event(events, 'clickhouse', 'mcp.tool.called', 'Invoking official ClickHouse MCP server for historical evidence', { tool: 'run_query', transport: config.mcpUrl ? 'http' : 'stdio', server: 'mcp-clickhouse' });
+          const result = await this.mcp.queryEvidence(query);
+          evidence = normalizeEvidence(result);
+          source = 'clickhouse_mcp';
+          mcpOk = true;
+          this.event(events, 'clickhouse', 'tool.completed', 'Retrieved production recovery history via official ClickHouse MCP server', { tool: 'run_query', transport: config.mcpUrl ? 'http' : 'stdio', server: 'mcp-clickhouse', rows: evidence.rows.length });
+        } catch (mcpErr) {
+          // FALLBACK: controlled HTTPS evidence query when MCP fails
+          this.event(events, 'clickhouse', 'mcp.fallback', `ClickHouse MCP unavailable; falling back to HTTPS evidence query`, { server: 'mcp-clickhouse' });
+          if (config.requireLiveMcp || process.env.CINEPILOT_REQUIRE_LIVE_MCP === 'true') {
+            throw mcpErr;
+          }
+          if (this.ch.configured) {
+            const rows = await this.ch.query(query);
+            evidence = normalizeEvidence({ rows });
+            source = 'clickhouse_https_fallback';
+            this.event(events, 'clickhouse', 'tool.completed', 'Retrieved production recovery history from ClickHouse Cloud over HTTPS (MCP fallback)', { transport: 'https', rows: evidence.rows.length });
+          } else {
+            throw mcpErr;
+          }
+        }
+        void mcpOk;
+      } else if (this.ch.configured) {
         const rows = await this.ch.query(query);
         evidence = normalizeEvidence({ rows });
         source = 'clickhouse_https';
         this.event(events, 'clickhouse', 'tool.completed', 'Retrieved production recovery history from ClickHouse Cloud over HTTPS', { transport: 'https', rows: evidence.rows.length });
-      } else if (configLiveMcp()) {
-        const result = await this.mcp.call('run_query', { query });
-        evidence = normalizeEvidence(result);
-        source = 'clickhouse_mcp';
-        this.event(events, 'clickhouse', 'tool.completed', 'Retrieved production recovery history through MCP', { tool: 'run_query', rows: evidence.rows.length });
       } else {
-        throw new Error('Neither ClickHouse HTTPS nor MCP is configured');
+        throw new Error('Neither ClickHouse MCP nor HTTPS is configured');
       }
     } catch (e) {
-      if (process.env.CINEPILOT_REQUIRE_LIVE_MCP==='true') throw e;
+      if (config.requireLiveMcp || process.env.CINEPILOT_REQUIRE_LIVE_MCP==='true') throw e;
       evidence=localEvidence();
       this.event(events,'clickhouse','tool.skipped','Live ClickHouse unavailable; using bundled development fixture',{tool:'run_query',rows:evidence.rows.length,reason:e.message});
     }
@@ -38,7 +59,18 @@ export class Orchestrator {
     const candidates=recoveryAgent(scenario,evidence); this.event(events,'recovery','agent.completed','Candidate recovery strategies generated',{count:candidates.length});
     const plans=rankPlans(scenario,evidence);
     this.event(events,'recovery-engine','decision.ranked',`Ranked ${plans.length} plans deterministically`,{scores:plans.map(p=>({strategy:p.strategy,score:p.score}))});
-    const reasoning=await this.gemini.reason({incident:scenario,evidence,plans});
+    let reasoning;
+    try {
+      reasoning = await this.gemini.reason({incident:scenario,evidence,plans});
+    } catch (geminiErr) {
+      reasoning = {
+        mode: 'deterministic-fallback',
+        summary: `Gemini reasoning unavailable or invalid schema (${geminiErr.message}); fallback to deterministic plan ranking.`,
+        recommendation: plans[0]?.strategy || 'reorder',
+        risks: 'Fallback reasoning: review multi-factor operational score breakdown.',
+        expected_outcome: 'Top-ranked deterministic recovery plan selected.'
+      };
+    }
     this.event(events,'gemini','reasoning.completed',reasoning.mode==='gemini'?'Gemini analyzed the evidence and produced a decision':'Local deterministic reasoning used; configure Gemini for live reasoning',{mode:reasoning.mode,recommendation:reasoning.recommendation});
     const recommendation=plans.find(p=>p.strategy===reasoning.recommendation)||plans[0];
     this.event(events,'orchestrator','agent.completed',`Recommendation ready: ${recommendation.strategy}`);
@@ -49,7 +81,11 @@ export class Orchestrator {
 
 function localEvidence(){return {rows:[{strategy:'reorder',incidents:12,avg_days_saved:2.4,success_rate:88},{strategy:'split_unit',incidents:9,avg_days_saved:2.7,success_rate:81},{strategy:'relocate',incidents:7,avg_days_saved:1.8,success_rate:73}],historical_success:{reorder:88,split_unit:81,relocate:73}}}
 function normalizeEvidence(result){
-  const rows=result?.rows || result?.data || result?.result || [];
+  let rows=result?.rows || result?.data || result?.result || [];
+  if(Array.isArray(rows) && rows.length && Array.isArray(rows[0]) && Array.isArray(result?.columns)){
+    const cols=result.columns;
+    rows=rows.map(r=>Object.fromEntries(cols.map((c,i)=>[c,r[i]])));
+  }
   const normalized=Array.isArray(rows)?rows:[];
   const historical={}; for(const r of normalized){if(r.strategy) historical[r.strategy]=Number(r.success_rate??r.historical_success??70)}
   return {rows:normalized,historical_success:Object.keys(historical).length?historical:{reorder:70,relocate:70,split_unit:70}};
