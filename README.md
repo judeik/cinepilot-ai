@@ -7,6 +7,10 @@
 
 ---
 
+![CinePilot AI Production Command Center](docs/assets/cinepilot-command-center.png)
+
+---
+
 ## The Problem
 
 Film productions lose real money when disruptions happen and no one can make a fast, informed decision.
