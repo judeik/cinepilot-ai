@@ -7,7 +7,7 @@
 
 ---
 
-![CinePilot AI Production Command Center](docs/assets/cinepilot-command-center.png)
+![CinePilot AI Production Command Center](docs/cinepilot-production.png)
 
 ---
 
