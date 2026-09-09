@@ -1,5 +1,7 @@
 # CinePilot AI V3
 
+> CinePilot AI is an agentic production recovery command center for film and television. It retrieves production evidence from ClickHouse through MCP, coordinates specialist agents, uses Gemini to reason over the evidence, deterministically ranks recovery plans, and requires producer approval before execution.
+
 **Live Demo:** [https://cinepilotapp.vercel.app](https://cinepilotapp.vercel.app)
 **Backend API:** [https://cinepilot-ai-0fsz.onrender.com](https://cinepilot-ai-0fsz.onrender.com)
 **GitHub:** [https://github.com/judeik/cinepilot-ai](https://github.com/judeik/cinepilot-ai)
@@ -51,7 +53,8 @@ When a production disruption comes in, CinePilot does the following:
 
 **Then it stops and waits.** Nothing executes automatically. The producer reviews the ranked plans, sees the evidence behind each one, and approves a specific strategy. Only after that approval does CinePilot transition the production state, verify the recovery, and write the audit record to ClickHouse.
 
-The full cycle is: **incident → evidence → ranking → approval → execution → verification → ClickHouse persistence.**
+The core architecture workflow is:
+**Production evidence → ClickHouse → MCP integration → specialist agents → Gemini reasoning → deterministic recovery-plan ranking → producer approval → execution → verification → auditable persistence.**
 
 ---
 
