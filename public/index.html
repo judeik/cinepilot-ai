@@ -17,7 +17,7 @@
   </header>
   <div id="warmupBanner" style="display:none;margin-bottom:16px;padding:12px 18px;border-radius:12px;background:rgba(104,216,255,0.08);border:1px solid rgba(104,216,255,0.3);color:var(--text);font-size:13px;align-items:center;justify-content:space-between;"></div>
   <section class="hero">
-    <div class="panel"><span class="eyebrow">Evidence → Reasoning → Decision → Action → Verification</span><h2>Recover production before a disruption becomes a schedule crisis.</h2><p>CinePilot coordinates specialist agents, retrieves production history from ClickHouse Cloud over HTTPS, lets Gemini reason over the evidence, ranks recovery plans deterministically, then executes only after producer approval.</p></div>
+    <div class="panel"><span class="eyebrow">Evidence → Reasoning → Decision → Action → Verification</span><h2>Recover production before a disruption becomes a schedule crisis.</h2><p>CinePilot coordinates specialist agents, retrieves production history from ClickHouse Cloud via MCP, lets Gemini reason over the evidence, ranks recovery plans deterministically, then executes only after producer approval.</p></div>
     <div class="panel"><div class="eyebrow">Runtime</div><div class="status"><span><span class="dot"></span>Command center online</span><span id="runtime">Ready</span></div><div class="status"><span class="muted">Gemini</span><span id="gemini">—</span></div><div class="status"><span class="muted">ClickHouse</span><span id="clickhouse">—</span></div><div class="status"><span class="muted">Outcome Persistence</span><span id="persistence">—</span></div><div class="status"><span class="muted">Evidence</span><span id="evidence">Awaiting run</span></div></div>
   </section>
   <section class="metrics" id="metrics"><div class="metric"><label>Production</label><strong id="mProduction">—</strong></div><div class="metric"><label>Risk</label><strong id="mRisk">—</strong></div><div class="metric"><label>Scenes affected</label><strong id="mScenes">—</strong></div><div class="metric"><label>Crew affected</label><strong id="mCrew">—</strong></div></section>
@@ -29,7 +29,7 @@
   <section class="panel" style="margin-top:16px;">
     <div class="section-title">
       <h3>Recovery History & Audit Evidence</h3>
-      <span class="muted" id="historyCount">ClickHouse Cloud HTTPS</span>
+      <span class="muted" id="historyCount">ClickHouse MCP</span>
     </div>
     <div id="historyList"><div class="muted">Loading historical outcomes...</div></div>
   </section>
